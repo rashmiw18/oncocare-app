@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ patient.full_name }} — OncoCare AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body
+  data-patient-id="{{ patient.id }}"
+  data-is-doctor-view="{{ 'true' if is_doctor_view else 'false' }}"
+  data-viewer-role="{{ viewer.role }}">
+
+<!-- ================= NAV ================= -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 24" class="pulse-icon">
+        <polyline points="0,12 9,12 12,4 16,20 19,12 40,12" />
+      </svg>
+    </span>
+    <span class="brand-name">OncoCare <em>AI</em></span>
+  </div>
+  <nav class="topnav">
+    <a href="#input">Log Vitals</a>
+    <a href="#insights">Insights</a>
+    <a href="#history">History</a>
+    <a href="{{ url_for('report_page') }}{% if is_doctor_view %}?patient_id={{ patient.id }}{% endif %}">Report</a>
+    {% if is_doctor_view %}<a href="{{ url_for('doctor_home') }}">My patients</a>{% endif %}
+  </nav>
+  <div class="user-menu">
+    <span class="user-chip">
+      <span class="user-role-dot"></span>
+      {{ viewer.full_name }} <em>{{ viewer.role }}</em>
+    </span>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Sign out</a>
+  </div>
+</header>
+
+{% if is_doctor_view %}
+<div class="doctor-banner">
+  <span>👁 Viewing <strong>{{ patient.full_name }}</strong>'s dashboard as their doctor</span>
+  <a href="{{ url_for('doctor_home') }}">&larr; Back to patient list</a>
+</div>
+{% endif %}
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-waveline" aria-hidden="true">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="ecg-svg">
+      <path id="ecgPath" class="ecg-path" d="M0,60 L120,60 L150,20 L180,100 L210,60 L340,60 L370,20 L400,100 L430,60 L560,60 L590,20 L620,100 L650,60 L1200,60" />
+    </svg>
+  </div>
+  <div class="hero-content">
+    <p class="eyebrow">Continuous &amp; intelligent · not just record-keeping</p>
+    <h1>{% if is_doctor_view %}{{ patient.full_name }}'s vitals, at a glance.{% else %}Catch the shift before it becomes a crisis.{% endif %}</h1>
+    <p class="hero-sub">OncoCare AI reads temperature, heart rate, SpO₂, sleep, pain, fatigue and nausea the moment they change — scoring risk, flagging unusual patterns, and explaining what it sees in plain language.</p>
+    <div class="hero-cta">
+      <a href="#input" class="btn btn-primary">Log a reading</a>
+      <a href="#insights" class="btn btn-ghost">See how the model thinks</a>
+    </div>
+  </div>
+  <div class="hero-stats" id="heroStats">
+    <div class="hstat">
+      <span class="hstat-num" id="statAccuracy">—</span>
+      <span class="hstat-label">Model accuracy</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-num" id="statReadings">0</span>
+      <span class="hstat-label">Readings logged</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-num" id="statAnomaly">0</span>
+      <span class="hstat-label">Unusual patterns caught</span>
+    </div>
+  </div>
+</section>
+
+<main class="dashboard">
+
+  <!-- ================= INPUT + RESULT ================= -->
+  <section class="panel-row" id="input">
+    <div class="card vitals-card">
+      <div class="card-head">
+        <h2>Log a vitals reading</h2>
+        <div class="quick-actions">
+          <button class="chip" data-profile="healthy" type="button">Fill: Stable</button>
+          <button class="chip" data-profile="concerning" type="button">Fill: Concerning</button>
+          <button class="chip" data-profile="random" type="button">Fill: Random</button>
+        </div>
+      </div>
+
+      <form id="vitalsForm" class="vitals-grid" autocomplete="off">
+        <label class="field">
+          <span class="field-label">Temperature <em>°F</em></span>
+          <input type="number" step="0.1" name="temperature" id="temperature" value="98.6" min="90" max="110" required>
+        </label>
+        <label class="field">
+          <span class="field-label">Heart rate <em>bpm</em></span>
+          <input type="number" step="1" name="heart_rate" id="heart_rate" value="78" min="30" max="220" required>
+        </label>
+        <label class="field">
+          <span class="field-label">SpO₂ <em>%</em></span>
+          <input type="number" step="1" name="spo2" id="spo2" value="97" min="50" max="100" required>
+        </label>
+        <label class="field">
+          <span class="field-label">Sleep <em>hrs</em></span>
+          <input type="number" step="0.1" name="sleep_hours" id="sleep_hours" value="7" min="0" max="14" required>
+        </label>
+
+        <label class="field slider-field">
+          <span class="field-label">Pain <em id="painOut">0</em>/10</span>
+          <input type="range" name="pain_level" id="pain_level" value="0" min="0" max="10">
+        </label>
+        <label class="field slider-field">
+          <span class="field-label">Fatigue <em id="fatigueOut">0</em>/10</span>
+          <input type="range" name="fatigue_level" id="fatigue_level" value="0" min="0" max="10">
+        </label>
+        <label class="field slider-field">
+          <span class="field-label">Nausea <em id="nauseaOut">0</em>/10</span>
+          <input type="range" name="nausea_level" id="nausea_level" value="0" min="0" max="10">
+        </label>
+        <label class="field toggle-field">
+          <span class="field-label">Dizziness</span>
+          <input type="checkbox" name="dizziness" id="dizziness" class="toggle-input">
+          <span class="toggle-track" data-for="dizziness"><span class="toggle-thumb"></span></span>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="predictBtn">
+            <span>Analyze reading</span>
+          </button>
+          <span class="form-hint">Predictions run instantly on the trained model, nothing leaves your dashboard.</span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card result-card" id="resultCard">
+      <div class="card-head">
+        <h2>Risk assessment</h2>
+        <span class="badge badge-muted" id="resultTimestamp">Awaiting first reading</span>
+      </div>
+
+      <div class="result-body" id="resultEmpty">
+        <div class="pulse-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p>Log a reading to see the model's risk score, confidence, and any flags.</p>
+      </div>
+
+      <div class="result-body result-filled hidden" id="resultFilled">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 120" class="gauge-svg">
+            <path class="gauge-track" d="M15,110 A85,85 0 0 1 185,110" />
+            <path class="gauge-fill" id="gaugeFill" d="M15,110 A85,85 0 0 1 185,110" />
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-score" id="gaugeScore">0.0</span>
+            <span class="gauge-max">/15 risk score</span>
+          </div>
+        </div>
+        <div class="risk-level" id="riskLevelBadge">—</div>
+        <div class="proba-row" id="probaRow"></div>
+        <div class="forecast-banner hidden" id="forecastBanner"></div>
+        <div class="anomaly-banner hidden" id="anomalyBanner">
+          ⚠ This reading has an unusual pattern compared to typical readings — consider flagging it to the care team.
+        </div>
+        <ul class="flag-list" id="flagList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHARTS ================= -->
+  <section class="panel-row three" id="insights">
+    <div class="card">
+      <div class="card-head"><h2>Risk score trend</h2></div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Latest vitals vs. normal range</h2></div>
+      <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Risk distribution</h2></div>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="panel-row" id="importance-row">
+    <div class="card">
+      <div class="card-head"><h2>What drives the model's prediction</h2></div>
+      <p class="muted-copy">Feature importance from the trained RandomForest classifier — the vitals it weighs most heavily when scoring risk.</p>
+      <div id="importanceBars" class="importance-bars"></div>
+    </div>
+  </section>
+
+  <!-- ================= CLINICAL NOTES ================= -->
+  <section class="panel-row" id="notes">
+    <div class="card wide-card">
+      <div class="card-head">
+        <h2>Clinical notes</h2>
+      </div>
+      {% if is_doctor_view %}
+      <form id="noteForm" class="note-form">
+        <textarea id="noteInput" placeholder="Add a clinical note for {{ patient.full_name }}…" rows="2" required></textarea>
+        <button type="submit" class="btn btn-primary btn-sm">Add note</button>
+      </form>
+      {% endif %}
+      <ul class="notes-list" id="notesList">
+        <li class="empty-note">No notes yet.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= HISTORY ================= -->
+  <section class="panel-row" id="history">
+    <div class="card wide-card">
+      <div class="card-head">
+        <h2>Reading history</h2>
+        <button class="chip chip-danger" id="clearHistoryBtn" type="button">Clear history</button>
+      </div>
+      <div class="table-wrap">
+        <table class="history-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>Time</th><th>Temp</th><th>HR</th><th>SpO₂</th><th>Sleep</th>
+              <th>Pain</th><th>Fatigue</th><th>Nausea</th><th>Risk</th><th>Score</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr class="empty-row"><td colspan="11">No readings yet — log one above to get started.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>OncoCare AI is a decision-support demo. It does not replace clinical judgement — always contact the oncology care team for medical concerns.</p>
+</footer>
+
+<!-- ================= CHATBOT ================= -->
+<button id="chatToggle" class="chat-toggle" aria-label="Open OncoBot assistant">
+  <svg viewBox="0 0 24 24" class="chat-icon"><path d="M4 4h16v12H7l-3 3V4z"/></svg>
+  <span class="chat-dot"></span>
+</button>
+
+<div id="chatPanel" class="chat-panel hidden">
+  <div class="chat-head">
+    <div>
+      <strong>OncoBot</strong>
+      <span class="chat-sub">Grounded in {{ patient.full_name }}'s latest reading</span>
+    </div>
+    <div class="chat-head-actions">
+      <button id="chatSettingsBtn" class="icon-btn" title="Gemini API key">⚙</button>
+      <button id="chatCloseBtn" class="icon-btn" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div id="chatSettings" class="chat-settings hidden">
+    <label class="field">
+      <span class="field-label">Gemini API key</span>
+      <input type="password" id="geminiKeyInput" placeholder="Paste your Gemini API key">
+    </label>
+    <p class="muted-copy small">Stored only in this browser's local storage, sent directly to your Flask server to call Gemini — never logged.</p>
+    <button class="btn btn-primary btn-sm" id="saveKeyBtn">Save key</button>
+  </div>
+
+  <div id="chatMessages" class="chat-messages">
+    <div class="chat-msg chat-msg-bot">
+      Hi, I'm OncoBot 👋 I can help explain readings, the risk model, or general self-care tips. Add your Gemini API key in settings (⚙) to get started.
+    </div>
+  </div>
+
+  <form id="chatForm" class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Ask about the latest reading…" autocomplete="off">
+    <button type="submit" class="btn btn-primary btn-sm">Send</button>
+  </form>
+</div>
+
+<script>
+  // Some networks (campus/corporate firewalls, some antivirus/ad-blockers) block
+  // cdnjs.cloudflare.com specifically. If it fails, fall back to jsDelivr before
+  // giving up, so the charts don't just silently stay blank.
+  (function loadChartJs(onDone) {
+    function tryLoad(src, next) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = onDone;
+      s.onerror = next || onDone;
+      document.head.appendChild(s);
+    }
+    tryLoad(
+      "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js",
+      function () {
+        tryLoad("https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js", onDone);
+      }
+    );
+  })(function () { window.__chartJsLoadAttempted = true; });
+</script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+</html>

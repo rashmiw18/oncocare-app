@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report — OncoCare AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 24" class="pulse-icon">
+        <polyline points="0,12 9,12 12,4 16,20 19,12 40,12" />
+      </svg>
+    </span>
+    <span class="brand-name">OncoCare <em>AI</em></span>
+  </div>
+  <nav class="topnav">
+    {% if viewer.role == 'doctor' %}
+    <a href="{{ url_for('doctor_home') }}">My patients</a>
+    {% else %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% endif %}
+  </nav>
+  <div class="user-menu">
+    <span class="user-chip">
+      <span class="user-role-dot"></span>
+      {{ viewer.full_name }} <em>{{ viewer.role }}</em>
+    </span>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Sign out</a>
+  </div>
+</header>
+
+<main class="dashboard report-page">
+  <section class="panel-row">
+    <div class="card wide-card">
+      <div class="card-head">
+        <h2>Generate a patient report</h2>
+      </div>
+      <p class="muted-copy">Builds a downloadable PDF with the risk trend, symptom-burden summary, flagged readings, and any clinical notes for the selected period.</p>
+
+      <form id="reportForm" class="report-form">
+        {% if viewer.role == 'doctor' %}
+        <label class="field">
+          <span class="field-label">Patient</span>
+          <select id="patientSelect" {% if not patients %}disabled{% endif %}>
+            {% if not patients %}
+            <option>No patients assigned yet</option>
+            {% endif %}
+            {% for p in patients %}
+            <option value="{{ p.id }}" {% if patient and p.id == patient.id %}selected{% endif %}>{{ p.full_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% endif %}
+
+        <label class="field">
+          <span class="field-label">From</span>
+          <input type="date" id="startDate">
+        </label>
+        <label class="field">
+          <span class="field-label">To</span>
+          <input type="date" id="endDate">
+        </label>
+
+        <div class="quick-actions report-range-chips">
+          <button type="button" class="chip" data-range="7">Last 7 days</button>
+          <button type="button" class="chip" data-range="30">Last 30 days</button>
+          <button type="button" class="chip" data-range="90">Last 90 days</button>
+          <button type="button" class="chip" data-range="all">All time</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="downloadReportBtn" {% if viewer.role == 'doctor' and not patients %}disabled{% endif %}>
+          <span>Download PDF report</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel-row">
+    <div class="card wide-card report-preview-card">
+      <div class="card-head"><h2>What's inside</h2></div>
+      <ul class="report-checklist">
+        <li>Reporting period summary — latest risk level, average score, flagged reading counts</li>
+        <li>Risk score trend chart across the selected window</li>
+        <li>Average pain / fatigue / nausea burden</li>
+        <li>Table of high-risk and anomalous readings, with timestamps</li>
+        <li>Any clinical notes logged by the care team</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>OncoCare AI is a decision-support demo. It does not replace clinical judgement.</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/report.js') }}"></script>
+</body>
+</html>

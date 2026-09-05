@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — OncoCare AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body class="auth-body">
+
+<div class="auth-waveline" aria-hidden="true">
+  <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="ecg-svg">
+    <path class="ecg-path" d="M0,60 L120,60 L150,20 L180,100 L210,60 L340,60 L370,20 L400,100 L430,60 L560,60 L590,20 L620,100 L650,60 L1200,60" />
+  </svg>
+</div>
+
+<div class="auth-shell">
+  <div class="auth-brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 24" class="pulse-icon">
+        <polyline points="0,12 9,12 12,4 16,20 19,12 40,12" />
+      </svg>
+    </span>
+    <span class="brand-name">OncoCare <em>AI</em></span>
+  </div>
+
+  <div class="auth-card">
+    <div class="role-tabs" id="roleTabs">
+      <button type="button" class="role-tab {{ 'active' if role != 'doctor' else '' }}" data-role="patient">Patient</button>
+      <button type="button" class="role-tab {{ 'active' if role == 'doctor' else '' }}" data-role="doctor">Doctor</button>
+    </div>
+
+    <h1 id="authHeading">Welcome back</h1>
+    <p class="auth-sub" id="authSub">Sign in to see your vitals, risk trends, and insights.</p>
+
+    {% if error %}
+    <div class="auth-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+      <input type="hidden" name="role" id="roleField" value="{{ role or 'patient' }}">
+
+      <label class="field">
+        <span class="field-label">Username</span>
+        <input type="text" name="username" required autofocus autocomplete="username">
+      </label>
+      <label class="field">
+        <span class="field-label">Password</span>
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+
+      <button type="submit" class="btn btn-primary auth-submit">Sign in</button>
+    </form>
+
+    <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Create one</a></p>
+  </div>
+</div>
+
+<script>
+  const roleField = document.getElementById('roleField');
+  const heading = document.getElementById('authHeading');
+  const sub = document.getElementById('authSub');
+  const copy = {
+    patient: { h: "Welcome back", s: "Sign in to see your vitals, risk trends, and insights." },
+    doctor:  { h: "Doctor sign in", s: "Sign in to monitor your patients and review flagged readings." }
+  };
+  document.querySelectorAll('.role-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      roleField.value = btn.dataset.role;
+      heading.textContent = copy[btn.dataset.role].h;
+      sub.textContent = copy[btn.dataset.role].s;
+    });
+  });
+</script>
+</body>
+</html>

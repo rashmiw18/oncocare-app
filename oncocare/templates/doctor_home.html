@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctor dashboard — OncoCare AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 24" class="pulse-icon">
+        <polyline points="0,12 9,12 12,4 16,20 19,12 40,12" />
+      </svg>
+    </span>
+    <span class="brand-name">OncoCare <em>AI</em></span>
+  </div>
+  <nav class="topnav">
+    <a href="{{ url_for('doctor_home') }}">My patients</a>
+    <a href="{{ url_for('report_page') }}">Reports</a>
+  </nav>
+  <div class="user-menu">
+    <span class="user-chip">
+      <span class="user-role-dot"></span>
+      Dr. {{ doctor.full_name }} <em>doctor</em>
+    </span>
+    <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Sign out</a>
+  </div>
+</header>
+
+<section class="hero hero-compact">
+  <div class="hero-waveline" aria-hidden="true">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="ecg-svg">
+      <path class="ecg-path" d="M0,60 L120,60 L150,20 L180,100 L210,60 L340,60 L370,20 L400,100 L430,60 L560,60 L590,20 L620,100 L650,60 L1200,60" />
+    </svg>
+  </div>
+  <div class="hero-content">
+    <p class="eyebrow">Care team overview</p>
+    <h1>Good to see you, Dr. {{ doctor.full_name.split(' ')[0] }}.</h1>
+    <p class="hero-sub">{{ patients|length }} patient{{ 's' if patients|length != 1 else '' }} under your care{% if high_risk_count %}, <span class="hero-alert">{{ high_risk_count }} currently flagged High risk</span>{% endif %}.</p>
+  </div>
+  <div class="hero-stats">
+    <div class="hstat">
+      <span class="hstat-num">{{ patients|length }}</span>
+      <span class="hstat-label">Total patients</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-num" style="color: var(--accent-coral)">{{ high_risk_count }}</span>
+      <span class="hstat-label">High risk now</span>
+    </div>
+  </div>
+</section>
+
+<main class="dashboard">
+  <section class="panel-row">
+    <div class="card wide-card">
+      <div class="card-head">
+        <h2>Your patients</h2>
+      </div>
+
+      {% if not patients %}
+      <div class="empty-state">
+        <p>No patients are assigned to you yet. Share your name with patients so they can select you at sign-up, or ask your admin to link them.</p>
+      </div>
+      {% else %}
+      <div class="patient-grid">
+        {% for p in patients %}
+        <a href="{{ url_for('patient_detail', patient_id=p.id) }}" class="patient-card">
+          <div class="patient-card-head">
+            <span class="patient-name">{{ p.full_name }}</span>
+            {% if p.latest %}
+            <span class="pill {{ p.latest.risk_level }}">{{ p.latest.risk_level }}</span>
+            {% else %}
+            <span class="pill Muted">No data</span>
+            {% endif %}
+          </div>
+          {% if p.latest %}
+          <div class="patient-card-body">
+            <span class="patient-score">{{ "%.1f"|format(p.latest.risk_score) }}<em>/15</em></span>
+            <span class="patient-meta">Last reading {{ p.latest.timestamp[:10] }}</span>
+            {% if p.latest.is_anomaly %}<span class="patient-anomaly">⚠ Unusual pattern flagged</span>{% endif %}
+          </div>
+          {% else %}
+          <div class="patient-card-body">
+            <span class="patient-meta">No readings logged yet</span>
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>OncoCare AI is a decision-support demo. It does not replace clinical judgement.</p>
+</footer>
+
+</body>
+</html>

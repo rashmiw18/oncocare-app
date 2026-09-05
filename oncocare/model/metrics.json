@@ -1,0 +1,31 @@
+{
+  "features": [
+    "temperature",
+    "heart_rate",
+    "spo2",
+    "sleep_hours",
+    "pain_level",
+    "fatigue_level",
+    "nausea_level",
+    "dizziness"
+  ],
+  "classes": [
+    "High",
+    "Low",
+    "Medium"
+  ],
+  "classifier_accuracy": 0.993,
+  "regressor_mae": 0.0346,
+  "regressor_r2": 0.9971,
+  "feature_importance": {
+    "temperature": 0.2313,
+    "spo2": 0.2206,
+    "heart_rate": 0.1434,
+    "pain_level": 0.108,
+    "fatigue_level": 0.0997,
+    "nausea_level": 0.0951,
+    "dizziness": 0.0658,
+    "sleep_hours": 0.0362
+  },
+  "n_train_rows": 5000
+}
